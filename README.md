@@ -1,4 +1,4 @@
-# myvision
+# ifaa_assistive
 All Rights Reserved © [2023]
 
 The contents of this code and all its accompanying materials are protected by copyright law and other applicable intellectual property rights. This work is the sole property of its authors or creators. No part of this text may be reproduced, distributed, or transmitted in any form or by any means, electronic or mechanical, including photocopying, recording, or any other information storage and retrieval system, without the prior written permission of the copyright owner.
