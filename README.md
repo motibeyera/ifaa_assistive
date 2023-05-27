@@ -8,7 +8,7 @@ All trademarks, service marks, and logos used in this text are the property of t
 If you wish to obtain permission to use any part of this code or have any inquiries regarding its usage, please contact the copyright owner at the following address:
 
 Ifaa Assistive Team
-A.A., Ethiopia
+Jimma, Ethiopia.
 ifaaassistive@gmail.com 
 
 Thank you for respecting the intellectual property rights associated with this code.
