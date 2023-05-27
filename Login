@@ -1,0 +1,311 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:myvision/views/compose_email_view.dart';
+import 'package:myvision/views/register_view.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+class LoginView extends StatefulWidget {
+  const LoginView({Key? key}) : super(key: key);
+
+  @override
+  // ignore: library_private_types_in_public_api
+  _LoginViewState createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
+  final stt.SpeechToText _speechToText = stt.SpeechToText();
+  final FlutterTts _flutterTts = FlutterTts();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  String _emailErrorText = '';
+  String _passwordErrorText = '';
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<bool> _initializeSpeechToText() async {
+    bool available = await _speechToText.initialize();
+    if (!available) {
+      setState(() {});
+    }
+    return available;
+  }
+
+  Future<void> _speak(String text) async {
+    await _flutterTts.speak(text);
+  }
+
+  void _startListeningEmail() async {
+    bool available = await _initializeSpeechToText();
+    if (available) {
+      bool isListening = await _speechToText.listen(
+        onResult: (result) {
+          if (result.finalResult) {
+            String email = result.recognizedWords.replaceAll(' ', '');
+            email = email.replaceAll('at', '@'); // Replace 'at' with '@'
+            setState(() {
+              _emailController.text = email.toLowerCase();
+              _speak('Yes to confirmation. No to try again.');
+              _validateFields(); // Automatically validate the fields after setting the email
+            });
+          }
+        },
+      );
+
+      if (!isListening) {
+        // Speech recognition failed to start
+        _speak('Sorry, an error occurred during speech recognition');
+      }
+    } else {
+      // Speech-to-text initialization failed
+      _speak('Sorry, speech recognition is not available');
+    }
+  }
+
+  void _startListeningPasswordWithDelay() async {
+    await Future.delayed(const Duration(seconds: 2));
+    _startListeningPassword();
+  }
+
+  void _startListeningPassword() async {
+    bool available = await _initializeSpeechToText();
+    if (available) {
+      _speechToText.listen(
+        onResult: (result) {
+          if (result.finalResult) {
+            setState(() {
+              _passwordController.text = result.recognizedWords;
+              _speak('Yes to confirmation. No to try again.');
+            });
+          }
+        },
+      );
+    }
+  }
+
+  // ignore: unused_element
+  void _validateFields() {
+    setState(() {
+      _emailErrorText = '';
+      _passwordErrorText = '';
+      if (_emailController.text.isEmpty) {
+        _emailErrorText = 'Please enter your email address';
+        _speak(_emailErrorText);
+      } else if (!_emailController.text.contains('@')) {
+        _emailErrorText = 'Invalid email address';
+        _speak(_emailErrorText);
+      }
+
+      if (_passwordController.text.isEmpty) {
+        _passwordErrorText = 'Please enter your password';
+        _speak(_passwordErrorText);
+      } else {
+        _signInWithEmailAndPassword();
+      }
+    });
+  }
+
+  void _signInWithEmailAndPassword() async {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+      // User is successfully logged in
+      // ignore: use_build_context_synchronously
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SendEmailScreen(),
+        ),
+      );
+    } catch (e) {
+      // Error occurred during login
+      String errorMessage = e.toString();
+      _speak(errorMessage);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Step 1: Welcome message
+    _speak('Welcome To E faaa Assistive');
+    // Step 2: Enter email
+    Future.delayed(const Duration(seconds: 3), () {
+      _speak('Login with email account to continue');
+      _speak('Enter your Email');
+      Future.delayed(const Duration(seconds: 3), () {
+        _speak('Speak');
+        _startListeningEmail();
+      });
+    });
+
+    // Step 4: Check if user is already registered
+    // You can modify this part based on your registration logic
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        // User is already registered, automatically move to MENU PAGE
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const SendEmailScreen(),
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[300],
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.email,
+                size: 100,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Ifaa Assistive',
+                style: GoogleFonts.bebasNeue(
+                  fontSize: 52,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Empowering communication  ',
+                style: TextStyle(
+                  fontSize: 19,
+                ),
+              ),
+              const SizedBox(height: 30),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      border: Border.all(color: Colors.white),
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 20.0),
+                    child: TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        labelText: 'Email',
+                        errorText: _emailErrorText,
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Please enter your email address';
+                        } else if (!value.contains('@')) {
+                          return 'Invalid email address';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      border: Border.all(color: Colors.white),
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 20.0),
+                    child: TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        labelText: 'Password',
+                        errorText: _passwordErrorText,
+                      ),
+                      onTap: () {
+                        _speak('Enter your Password');
+                        _startListeningPasswordWithDelay();
+                      },
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Please enter your password';
+                        } else if (value.length < 6) {
+                          return 'Wrong password';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 25),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                child: Container(
+                  padding: const EdgeInsets.all(25),
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Sign In',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 40),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    ' Not registered yet?',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterView(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      '  Register now!',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
