@@ -1,0 +1,318 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart' as flutter_tts;
+import 'package:myvision/views/login_view.dart';
+import 'package:myvision/views/menu_page.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:permission_handler/permission_handler.dart';
+
+class SentMailPage extends StatefulWidget {
+  const SentMailPage({Key? key}) : super(key: key);
+
+  @override
+  // ignore: library_private_types_in_public_api
+  _SentMailPageState createState() => _SentMailPageState();
+}
+
+class _SentMailPageState extends State<SentMailPage> {
+  stt.SpeechToText speech = stt.SpeechToText();
+  bool isListening = false;
+
+  void _speak(String text) async {
+    flutter_tts.FlutterTts flutterTts = flutter_tts.FlutterTts();
+    await flutterTts.setLanguage("en-US");
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.speak(text);
+  }
+
+  void requestMicrophonePermission() async {
+    PermissionStatus status = await Permission.microphone.request();
+    if (status.isGranted) {
+      startListening();
+    } else {
+      // Handle permission denied
+    }
+  }
+
+  void startListening() {
+    speech.listen(
+      onResult: (result) {
+        if (result.finalResult) {
+          String command = result.recognizedWords.toLowerCase();
+          processCommand(command);
+        }
+      },
+    );
+    setState(() {
+      isListening = true;
+    });
+  }
+
+  void stopListening() {
+    speech.stop();
+    setState(() {
+      isListening = false;
+    });
+  }
+
+  void processCommand(String command) {
+    if (command.contains('two')) {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => const MenuPage()));
+    } else if (command.contains('two')) {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => const LoginView()));
+    } else if (command.contains('yes')) {
+      _repeatMenu();
+    }
+  }
+
+  Future<void> _repeatMenu() async {
+    await Future.delayed(const Duration(seconds: 4));
+
+    _speak('What would you like to do?');
+    await Future.delayed(const Duration(seconds: 4));
+
+    _speak('To search specific email, say "one".');
+    await Future.delayed(const Duration(seconds: 4));
+
+    _speak('2.To go back to the options page say "two"');
+    await Future.delayed(const Duration(seconds: 4));
+    _speak('4. To logout, say "three".');
+    await Future.delayed(const Duration(seconds: 4));
+    _speak('Tap anywhere on the screen to repeat sent mails page options.');
+    await Future.delayed(const Duration(seconds: 4));
+
+    startListening();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _speak('You are logged into your sent mails page.');
+    requestMicrophonePermission();
+  }
+
+  @override
+  void dispose() {
+    stopListening();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[300],
+      body: SafeArea(
+        child: Column(
+          children: [
+            // app bar
+            const SizedBox(height: 30),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Text(
+                        'Sent',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        ' Page',
+                        style: TextStyle(
+                          fontSize: 28,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // plus button
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+
+            // What would you like to do?
+            Container(
+              width: 300,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.blue[300],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Sent Mails',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  )
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            // compose
+            Padding(
+              padding: const EdgeInsets.all(25.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            height: 80,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Image.asset(
+                              'lib/icons/magnifier.png',
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 20,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Search',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 12,
+                              ),
+                              Text(' to search specific email',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                  )),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const Icon(Icons.arrow_forward_ios_outlined),
+                    ],
+                  ),
+                  const SizedBox(height: 25),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            height: 80,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Image.asset(
+                              'lib/icons/back-button.png',
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 20,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Back',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 12,
+                              ),
+                              Text('to go back to manu page',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                  )),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const Icon(Icons.arrow_forward_ios_outlined),
+                    ],
+                  ),
+                  const SizedBox(height: 25),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            height: 80,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Image.asset(
+                              'lib/icons/exit.png',
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 20,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Logout',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 12,
+                              ),
+                              Text('To logout',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                  )),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const Icon(Icons.arrow_forward_ios_outlined),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
